@@ -1,0 +1,5 @@
+{
+	"dataframe_path": "/app/app/models/netflix_titles.csv",
+	"model_path": "/app/app/models/tfidf_netflix.dill",
+	"loger_patch": "/app/app/models/app_log.log"
+}

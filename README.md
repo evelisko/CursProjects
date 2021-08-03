@@ -28,7 +28,7 @@
 <tr>
 <td>
 
-[Введение в нейронный сети](./Image_classificate)
+[Введение в нейронный сети](./DeepLearning)
 
 </td>
 <td>

@@ -1,16 +1,21 @@
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
+from aiogram import flags
+from utils.model import Model
 
 
 router = Router()
-
+model = Model()
 
 @router.message(Command("start"))
-async def start_handler(msg: Message):
-    await msg.answer("Привет!\nЯ Эхо-бот!\nОтправь мне любое сообщение, а я тебе обязательно отвечу.")
+async def start_handler(self, msg: Message):
+    await msg.answer("Здравствуй, дорогой! Чем могу помочь тебе сегодня?")
 
 
 @router.message()
+@flags.chat_action("typing")
 async def message_handler(msg: Message):
-    await msg.answer(msg.text)
+    print(msg.text)
+    await msg.answer(model.generate(msg.text)) # это будет промпт для нашей модели.
+

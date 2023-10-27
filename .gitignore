@@ -2,4 +2,4 @@
 **/.idea/**
 **/.ipynb_checkpoints/**
 **/tfidf_netflix.dill
-**/.pyc
+**/*.pyc

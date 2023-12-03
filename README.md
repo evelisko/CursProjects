@@ -43,14 +43,13 @@ http://www.ee.surrey.ac.uk/CVSSP/demos/chars74k/.
 </td>
 </tr>
 
-</tbody>
-</table>
+<tr>
+<td>
 
 [Основы анализа естественного языка](./NLP)
 
 </td>
 <td>
-
 
 Разработать диалогового чат-бота для Telegram, на основе модели LLM.
 

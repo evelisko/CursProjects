@@ -8,11 +8,12 @@ from peft import PeftConfig, PeftModel
 
 
 def load_saiga(
-    model_name: str,
+    model_name: str, # имя модели или путь до места ее расположения.
     use_4bit: bool = False,
     torch_compile: bool = False,
     torch_dtype: str = None,
     is_lora: bool = False,
+    lora_name: str = 'default',
     use_flash_attention_2: bool = False
 ):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -82,6 +83,7 @@ def load_saiga(
         model = PeftModel.from_pretrained(
             model,
             model_name,
+            adapter_name=lora_name,
             torch_dtype=torch_dtype
         )
     elif device == "cpu":
@@ -93,6 +95,7 @@ def load_saiga(
         model = PeftModel.from_pretrained(
             model,
             model_name,
+            adapter_name=lora_name,
             device_map={"": device}
         )
 

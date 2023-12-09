@@ -3,7 +3,7 @@ import json
 import os
 
 import fire
-import wandb
+# import wandb
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification, AutoConfig

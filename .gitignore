@@ -3,3 +3,10 @@
 **/.ipynb_checkpoints/**
 **/tfidf_netflix.dill
 **/*.pyc
+**/NLP/models/**
+**/NLP/models_copy/**
+**/*.zip
+**/*.csv
+**/*.parquet
+**/NLP/train_dataset.txt
+**/NLP/test_dataset.txt

@@ -59,12 +59,12 @@ class ChatDataset(Dataset):
         )["input_ids"]
 
     def convert_record(self, record):
-        conversation = Conversation.from_template(self.templates_path)
-        conversation.expand(record["messages"])
+        conversation = Conversation.from_template(self.templates_path)  #  Ненужно нам этого.
+        conversation.expand(record["messages"])  # Для запоминания контекста диалога.
 
         input_ids, labels = [], []
-        conv = []
-        for message, role in conversation.iter_messages():
+        for message, role in conversation.iter_messages():  # Разделение документа на записи. 
+                                                            # Формат записей надо выполнять конвертацию.
             message_input_ids = self.get_tokens(message)
             message_labels = message_input_ids
             if len(input_ids) + len(message_input_ids) > self.max_tokens_count:

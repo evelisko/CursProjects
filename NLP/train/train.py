@@ -114,7 +114,7 @@ def train(
 
     device_map = "auto"
     # ------------------------- DeepSpeed ---------------------------
-    world_size = int(os.environ.get("WORLD_SIZE", 1)) # Проверяем сколько видеокарт установлено на компьютере. 
+    world_size = int(os.environ.get("WORLD_SIZE", 1))  # Проверяем сколько видеокарт установлено на компьютере. 
     ddp = world_size != 1
 
     deepspeed_config = config.get("deepspeed")
@@ -122,7 +122,7 @@ def train(
     lora_config = config.get("lora")
     callbacks = [SavePeftModelCallback] if lora_config else []
 
-    training_args = TrainingArguments( # --- важный параметр.
+    training_args = TrainingArguments(  # важный параметр.
         output_dir=output_dir,
         save_total_limit=1,
         load_best_model_at_end=True,
@@ -133,7 +133,7 @@ def train(
     )
     model_name = config["model_name"]
 
-    if ddp: # DistributedDataParallel Организует работу с несколькими видеокартами.
+    if ddp:  # DistributedDataParallel Организует работу с несколькими видеокартами.
         device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
         gradient_accumulation_steps = trainer_config["gradient_accumulation_steps"]
         gradient_accumulation_steps = gradient_accumulation_steps // world_size
@@ -144,22 +144,22 @@ def train(
     tokenizer = fix_tokenizer(tokenizer, model_config)
     tokenizer.save_pretrained(output_dir)
 
-    train_records = read_jsonl(train_file)
-    val_records = read_jsonl(val_file)
-    random.shuffle(train_records)
-    print(train_records[0])
-
     # model_type = config.get("model_type", "causal")
-    templates_path = config["templates_path"] # "internal_prompts/saiga_v2.json",
+    templates_path = config["templates_path"]  # "internal_prompts/saiga_v2.json",
     only_target_loss = config.get("only_target_loss", True)
     mode = config.get("mode", "chat") 
     assert mode == "chat", "Only chat mode is supported in new versions!"
     # assert model_type == "causal", "Only causal models are supported in new versions!"
     max_tokens_count = config["max_tokens_count"]
     #------------------- Загрузка датасета -------------------------
+    train_records = read_jsonl(train_file)
+    val_records = read_jsonl(val_file)
+    random.shuffle(train_records)
+    print(train_records[0])
+
     datasets = []
     for records in (train_records, val_records):
-        datasets.append(ChatDataset(  #  Откуда его взять?
+        datasets.append(ChatDataset(  # Откуда его взять? Зачем он вообще создается? и каков формат представления данных?
             records,
             tokenizer,
             max_tokens_count=max_tokens_count,
@@ -181,8 +181,8 @@ def train(
     
     # ------------------- Загрузка модели -----------------------
 
-    load_in_8bit = bool(config.get("load_in_8bit", False)) # Изменяем параметры модели для дообучения.
-    load_in_4bit = bool(config.get("load_in_4bit", False)) # для дообучения модели нужны свои спытания. 
+    load_in_8bit = bool(config.get("load_in_8bit", False))  # Изменяем параметры модели для дообучения.
+    load_in_4bit = bool(config.get("load_in_4bit", False))  # для дообучения модели нужны свои спытания. 
     use_bf16 = bool(trainer_config.get("bf16", False))
     torch_dtype = torch.bfloat16 if use_bf16 else torch.float16
     if load_in_8bit:

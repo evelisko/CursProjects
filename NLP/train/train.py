@@ -9,12 +9,11 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification, AutoConfig
 from transformers import Trainer, TrainingArguments, logging, TrainerCallback, TrainerState, TrainerControl, BitsAndBytesConfig
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
-from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training
-
-from dataset import ChatDataset
-from util.dl import set_random_seed, fix_tokenizer, fix_model
-from util.io import read_jsonl
-from util.load import load_saiga
+from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training, PeftModel
+from train.util.dataset import ChatDataset
+from train.util.dl import set_random_seed, fix_tokenizer, fix_model
+from train.util.io import read_jsonl
+from train.util.load import load_saiga
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -58,6 +57,7 @@ class SavePeftModelCallback(TrainerCallback):
     ):
         checkpoint_path = f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}"
         checkpoint_folder = os.path.join(args.output_dir, checkpoint_path)
+        print(f'checkpoint_model_path {checkpoint_folder}')
         kwargs["model"].save_pretrained(checkpoint_folder)
         return control
 
@@ -95,15 +95,16 @@ def custom_prepare_model_for_int8_training(
     return model
 
 
-def train(
-    model_path: str,  # Путь до модели и параметров конфигураций.   
+def train( 
     config_file: str,  # trainer_config
     train_file: str,
     val_file: str,
     output_dir: str,
+    model_path: str = None,  # Путь до модели и параметров конфигураций.
+    adapter_path: str = None,  
     checkpoint: str = None,
     sample_rate: float = 1.0,
-    # report_to: str = "wandb",
+    report_to: str = None,
     seed: int = 42,
     use_flash_attention_2: bool = False
 ):
@@ -126,12 +127,24 @@ def train(
         output_dir=output_dir,
         save_total_limit=1,
         load_best_model_at_end=True,
-        # report_to=report_to,
-        ddp_find_unused_parameters=False if ddp else None,
-        deepspeed=deepspeed_config,
+        report_to=report_to,
+        # ddp_find_unused_parameters=False if ddp else None,
+        # deepspeed=deepspeed_config,
         **trainer_config
     )
-    model_name = config["model_name"]
+
+    # training_args = TrainingArguments(
+    #     output_dir="./gpt2-sv", #The output directory
+    #     overwrite_output_dir=True, #overwrite the content of the output directory
+    #     num_train_epochs=3, # number of training epochs
+    #     per_device_train_batch_size=4, # batch size for training
+    #     per_device_eval_batch_size=4,  # batch size for evaluation
+    #     eval_steps = 400, # Number of update steps between two evaluations.
+    #     save_steps=800, # after # steps model is saved
+    #     warmup_steps=500,# number of warmup steps for learning rate scheduler
+    #     )
+    
+    model_name = model_path if model_path else config["model_name"]
 
     if ddp:  # DistributedDataParallel Организует работу с несколькими видеокартами.
         device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
@@ -165,7 +178,8 @@ def train(
             max_tokens_count=max_tokens_count,
             sample_rate=sample_rate,
             templates_path=templates_path,
-            only_target_loss=only_target_loss
+            only_target_loss=only_target_loss, 
+            # add_global_eos=False
         ))
     train_dataset, val_dataset = datasets
     data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
@@ -233,11 +247,25 @@ def train(
     # передаем конфиги в скрипт для обучения модели. 
 
     # Обучение новой модели, дообучение существующей.
-    # если переданы данные для LoRa, то загружаем ее. 
-    if lora_config:  # Здесь надо самим загрузить новую модль LoRa. 
-        lora_config = LoraConfig(**lora_config)
-        model = get_peft_model(model, lora_config)
+    # если переданы данные для LoRa, то загружаем ее.
+    if adapter_path:
+        model = PeftModel.from_pretrained(
+                    model,
+                    adapter_path,
+                    torch_dtype=torch_dtype
+                    )
+    else:     
+        if lora_config:  # Здесь надо самим загрузить новую модль LoRa. 
+            lora_config = LoraConfig(**lora_config)  # Надо понять чем параметры адаптера для обучения отличаются от параметров для предсказаний.
+            model = get_peft_model(model, lora_config)   
 
+    # trainer = Trainer(
+    #     model=model,
+    #     args=training_args,
+    #     data_collator=data_collator,
+    #     train_dataset=train_dataset,
+    #     eval_dataset=val_dataset
+    # )
     trainer = TrainerNoBaseSave(
         model=model,
         args=training_args,
@@ -251,6 +279,7 @@ def train(
     #     wandb.init(project="rulm_self_instruct", name=config_file)
 
     trainer.train(checkpoint)
+    print(f'save model to {output_dir}')
     model.save_pretrained(output_dir)
 
 

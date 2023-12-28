@@ -76,3 +76,26 @@ and specifically the [install guide](https://docs.nvidia.com/datacenter/cloud-na
 ----------------------------------------------------------------------------------------------
 docker run -d --name=bot --gpus all bot -v /home/dshome/Documents/GeekBrains/CursProjects/NLP/config:/app/config -v /home/dshome/Documents/GeekBrains/CursProjects/NLP/logs:/app/logs bot
 
+```
+Tue Dec 26 22:05:20 2023       
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 545.23.08              Driver Version: 545.23.08    CUDA Version: 12.3     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  NVIDIA A100-SXM4-80GB          Off | 00000000:8B:00.0 Off |                    0 |
+| N/A   56C    P0             305W / 500W |  50506MiB / 81920MiB |     91%      Default |
+|                                         |                      |             Disabled |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|    0   N/A  N/A      1061      G   /usr/lib/xorg/Xorg                            4MiB |
+|    0   N/A  N/A     13136      C   /usr/bin/python3                          50476MiB |
++---------------------------------------------------------------------------------------+
+```

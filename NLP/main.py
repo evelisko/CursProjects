@@ -7,7 +7,6 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.chat_action import ChatActionMiddleware
 import handlers
-from utils.model import Model
 
 
 async def main():
@@ -24,8 +23,10 @@ async def main():
          )
 
     config = Config(config_parser)
-
-    handlers.model.load('IlyaGusev/saiga2_7b_lora', is_lora=True, use_4bit=True) 
+    print(f'TOKEN: {config.token}')
+    print(config.toxicity_score)
+    handlers.chat_model.load(config.llm_model, config.system_prompt, is_lora=True, use_4bit=True)
+    handlers.check_toxicity.load(config.classifire_model, config.toxicity_score) 
     bot = Bot(token=config.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers.router)

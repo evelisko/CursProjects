@@ -85,11 +85,11 @@ class ChatDataset(Dataset):
             input_ids.append(self.tokenizer.eos_token_id)
             labels.append(self.tokenizer.eos_token_id)
 
-        if not self.is_printed:
-            print(input_ids)
-            print(labels)
-            print("Full prompt:", self.tokenizer.decode(input_ids, skip_special_tokens=False))
-            self.is_printed = True
+        # if not self.is_printed:
+        #     print(input_ids)
+        #     print(labels)
+        #     print("Full prompt:", self.tokenizer.decode(input_ids, skip_special_tokens=False))
+        #     self.is_printed = True
 
         input_ids = torch.LongTensor(input_ids)
         labels = torch.LongTensor(labels)

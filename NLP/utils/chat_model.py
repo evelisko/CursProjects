@@ -7,9 +7,8 @@ from typing import List
 from transformers import AutoTokenizer, GenerationConfig, AutoModelForCausalLM, AutoConfig, BitsAndBytesConfig
 from peft import PeftConfig, PeftModel
 
-system_prompt = "Ты — Сайга, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им."
 
-class Model():
+class ChatModel():
     def __init__(self):
     # , model_name: str = None,
     # use_4bit: bool = True,
@@ -19,6 +18,7 @@ class Model():
         # self.model_name = model_name
         # self.use_4bit = use_4bit
         # self.torch_compile = torch_compile
+        self.system_prompt = ""
         self.torch_dtype = None
         # self.is_lora = is_lora
         self.use_flash_attention_2 = False
@@ -31,10 +31,14 @@ class Model():
 
     def load(self, # TODO Предполагается, что модель радотает только с одним адаптрером, если таковой имеется.
              model_name_or_path: str = None,
+             system_prompt: str = "",
              use_4bit: bool = True,
              is_lora: bool = False, 
              torch_compile: bool = False
              ):
+        
+        self.system_prompt = system_prompt 
+        print(self.system_prompt)
         device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=False) #, padding_side='left')
         self.generation_config = GenerationConfig.from_pretrained(model_name_or_path, do_sample=True)
@@ -75,14 +79,14 @@ class Model():
                 self.torch_dtype = base_model_config.torch_dtype
 
             # # if device == "cuda":
-            self.model = AutoModelForCausalLM.from_pretrained(
-                    config.base_model_name_or_path,
-                    torch_dtype=self.torch_dtype,
-                    # load_in_4bit=True,
-                    device_map="auto",
-                    # quantization_config=quantization_config,
-                    use_flash_attention_2=self.use_flash_attention_2
-                )
+            # self.model = AutoModelForCausalLM.from_pretrained(
+            #         config.base_model_name_or_path,
+            #         torch_dtype=self.torch_dtype,
+            #         # load_in_4bit=True,
+            #         device_map="auto",
+            #         # quantization_config=quantization_config,
+            #         use_flash_attention_2=self.use_flash_attention_2
+            #     )
             if use_4bit:
                 quantization_config = BitsAndBytesConfig(
                         load_in_4bit=True,
@@ -134,9 +138,8 @@ class Model():
         pass
 
     # Необходимо сделать промт для модели.
-    
     def generate(self, prompts: List[str]):
-        prompts = f"<s>system\n{system_prompt}</s>\n" + \
+        prompts = f"<s>system\n{self.system_prompt}</s>\n" + \
             f"<s>user\n{prompts}</s>\n" + \
             f"<s>bot\n"
         if self.eos_token_id is not None:
@@ -158,104 +161,3 @@ class Model():
             sample_output = sample_output.replace("</s>", "").strip()
             outputs.append(sample_output)
         return outputs[0]
-    
-
-DEFAULT_MESSAGE_TEMPLATE = "<s>{role}\n{content}</s>\n"
-DEFAULT_SYSTEM_PROMPT = "Ты — Сайга, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им."
-
-
-class Conversation:
-    def __init__(
-        self,
-        system_message_template: str = DEFAULT_MESSAGE_TEMPLATE,
-        user_message_template: str = DEFAULT_MESSAGE_TEMPLATE,
-        bot_message_template: str = DEFAULT_MESSAGE_TEMPLATE,
-        system_prompt: str = DEFAULT_SYSTEM_PROMPT,
-        system_role: str = "system",
-        user_role: str = "user",
-        bot_role: str = "bot",
-        suffix: str = "<s>bot"
-    ):
-        self.system_message_template = system_message_template
-        self.user_message_template = user_message_template
-        self.bot_message_template = bot_message_template
-        self.system_role = system_role
-        self.user_role = user_role
-        self.bot_role = bot_role
-        self.suffix = suffix
-        self.messages = [{
-            "role": self.system_role,
-            "content": system_prompt
-        }]
-
-    def add_user_message(self, message):
-        self.messages.append({
-            "role": self.user_role,
-            "content": message
-        })
-
-    def add_bot_message(self, message):
-        self.messages.append({
-            "role": self.bot_role,
-            "content": message
-        })
-
-    def count_tokens(self, tokenizer, current_messages):
-        final_text = ""
-        for message in current_messages:
-            final_text += self.format_message(message)
-        tokens = tokenizer([final_text])["input_ids"][0]
-        return len(tokens)
-
-    def shrink(self, tokenizer, messages, max_tokens):
-        system_message = messages[0]
-        other_messages = messages[1:]
-        while self.count_tokens(tokenizer, [system_message] + other_messages) > max_tokens:
-            other_messages = other_messages[2:]
-        return [system_message] + other_messages
-
-    def format_message(self, message):
-        if message["role"] == self.system_role:
-            return self.system_message_template.format(**message)
-        if message["role"] == self.user_role:
-            return self.user_message_template.format(**message)
-        return self.bot_message_template.format(**message)
-
-    def get_prompt(self, tokenizer, max_tokens: int = None, add_suffix: bool = True):
-        messages = self.messages
-        if max_tokens is not None:
-            messages = self.shrink(tokenizer, messages, max_tokens)
-
-        final_text = ""
-        for message in messages:
-            final_text += self.format_message(message)
-
-        if add_suffix:
-            final_text += self.suffix
-
-        return final_text.strip()
-
-    def iter_messages(self):
-        for message in self.messages:
-            yield self.format_message(message), message["role"]
-
-    @classmethod
-    def from_template(cls, file_name):
-        with open(file_name, encoding="utf-8") as r:
-            template = json.load(r)
-        return Conversation(
-            **template
-        )
-
-    def expand(self, messages, role_mapping = None):
-        if not role_mapping:
-            role_mapping = dict()
-
-        if messages[0]["role"] == "system":
-            self.messages = []
-
-        for message in messages:
-            self.messages.append({
-                "role": role_mapping.get(message["role"], message["role"]),
-                "content": message["content"]
-            })

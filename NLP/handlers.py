@@ -2,11 +2,13 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram import flags
-from utils.model import Model
+from utils.chat_model import ChatModel
+from utils.toxic_classifirer import CheckToxicity
 
 
 router = Router()
-model = Model()
+chat_model = ChatModel()
+check_toxicity = CheckToxicity()
 
 @router.message(Command("start"))
 async def start_handler(self, msg: Message):
@@ -17,5 +19,8 @@ async def start_handler(self, msg: Message):
 @flags.chat_action("typing")
 async def message_handler(msg: Message):
     print(msg.text)
-    await msg.answer(model.generate(msg.text)) # это будет промпт для нашей модели.
-
+    validate = check_toxicity.text2toxicity(msg.text)
+    if 'non-toxic' in validate or not validate: # Проверяем, что в сообщение не является токсичным. 
+        await msg.answer(chat_model.generate(msg.text)) # это будет промпт для нашей модели.
+    else:
+        await msg.answer(' '.join(validate)) 

@@ -102,7 +102,7 @@ def train(
     output_dir: str,
     model_path: str = None,  # Путь до модели и параметров конфигураций.
     adapter_path: str = None,  
-    checkpoint: str = None,
+    checkpoint: str = False,
     sample_rate: float = 1.0,
     report_to: str = None,
     seed: int = 42,
@@ -168,7 +168,7 @@ def train(
     train_records = read_jsonl(train_file)
     val_records = read_jsonl(val_file)
     random.shuffle(train_records)
-    print(train_records[0])
+    # print(train_records[0])
 
     datasets = []
     for records in (train_records, val_records):
@@ -184,12 +184,12 @@ def train(
     train_dataset, val_dataset = datasets
     data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
 
-    print("INPUT_IDS")
-    print(data_collator([train_dataset[0], train_dataset[1]])["input_ids"][0])
-    print("MASK")
-    print(data_collator([train_dataset[0], train_dataset[1]])["attention_mask"][0])
-    print("LABELS")
-    print(data_collator([train_dataset[0], train_dataset[1]])["labels"][0])
+    # print("INPUT_IDS")
+    # print(data_collator([train_dataset[0], train_dataset[1]])["input_ids"][0])
+    # print("MASK")
+    # print(data_collator([train_dataset[0], train_dataset[1]])["attention_mask"][0])
+    # print("LABELS")
+    # print(data_collator([train_dataset[0], train_dataset[1]])["labels"][0])
 
     # model_types = {"causal": AutoModelForCausalLM,}
     
@@ -206,7 +206,7 @@ def train(
             load_in_8bit=True,
             device_map=device_map,
             torch_dtype=torch_dtype,
-            use_flash_attention_2=use_flash_attention_2
+            # use_flash_attention_2=use_flash_attention_2
         )
         model = fix_model(model, tokenizer, use_resize=False)  # -----
         model = custom_prepare_model_for_int8_training(model)

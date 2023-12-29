@@ -9,4 +9,8 @@ class Config(object):
         self.classifire_model = self.parser.get("classifire_model")
         self.system_prompt = self.parser.get("system_prompt")
         self.toxicity_score = self.parser.get("toxicity_score")
+        self.is_lora = self.parser.get("is_lora")
+        self.is_4bit = self.parser.get("is_4bit")
+        self.toxic_colors = self.parser.get("toxic_colors")
+
         

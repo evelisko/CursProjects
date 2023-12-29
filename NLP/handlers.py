@@ -19,8 +19,8 @@ async def start_handler(self, msg: Message):
 @flags.chat_action("typing")
 async def message_handler(msg: Message):
     print(msg.text)
-    validate = check_toxicity.text2toxicity(msg.text)
-    if 'non-toxic' in validate or not validate: # Проверяем, что в сообщение не является токсичным. 
+    toxic_answer = check_toxicity.text2toxicity(msg.text)
+    if not toxic_answer:
         await msg.answer(chat_model.generate(msg.text)) # это будет промпт для нашей модели.
     else:
-        await msg.answer(' '.join(validate)) 
+        await msg.answer(' '.join(toxic_answer)) 

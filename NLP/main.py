@@ -25,7 +25,8 @@ async def main():
     config = Config(config_parser)
     print(f'TOKEN: {config.token}')
     print(config.toxicity_score)
-    handlers.chat_model.load(config.llm_model, config.system_prompt, is_lora=True, use_4bit=True)
+    handlers.chat_model.load(config.llm_model, config.system_prompt,
+                              is_lora=config.is_lora, use_4bit=config.is_4bit)
     handlers.check_toxicity.load(config.classifire_model, config.toxicity_score) 
     bot = Bot(token=config.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())

@@ -1,11 +1,11 @@
 {
     "trainer": {
         "evaluation_strategy": "steps",
-        "per_device_train_batch_size": 1,
-        "per_device_eval_batch_size": 1,
+        "per_device_train_batch_size": 6,
+        "per_device_eval_batch_size": 6,
         "gradient_accumulation_steps": 128,
-        "eval_steps": 50,
-        "save_steps": 50,
+        "eval_steps": 5,
+        "save_steps": 5,
         "logging_steps": 2,
         "learning_rate": 0.0003,
         "num_train_epochs": 5,
@@ -27,8 +27,8 @@
     "load_in_8bit": true,
     "only_target_loss": true,
     "mode": "chat",
-    "templates_path": "train/internal_prompt.json",
-    "model_name": "models/llama2-7b",
+    "templates_path": "internal_prompt.json",
+    "model_name": "models/Llama-2-7B-fp16",
     "model_type": "causal",
     "max_tokens_count": 4096
 }

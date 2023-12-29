@@ -4,6 +4,7 @@
 **/tfidf_netflix.dill
 **/*.pyc
 **/NLP/models/**
+**/NLP/train/models/**
 **/NLP/models_copy/**
 **/NLP/role_play_realm_ru/**
 **/*.zip

@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from tqdm import tqdm
 
-from train.util.chat import Conversation
+from util.chat import Conversation
 
 
 class ChatDataset(Dataset):

@@ -10,10 +10,10 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTok
 from transformers import Trainer, TrainingArguments, logging, TrainerCallback, TrainerState, TrainerControl, BitsAndBytesConfig
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training, PeftModel
-from train.util.dataset import ChatDataset
-from train.util.dl import set_random_seed, fix_tokenizer, fix_model
-from train.util.io import read_jsonl
-from train.util.load import load_saiga
+from util.dataset import ChatDataset
+from util.dl import set_random_seed, fix_tokenizer, fix_model
+from util.io import read_jsonl
+from util.load import load_saiga
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -102,9 +102,9 @@ def train(
     output_dir: str,
     model_path: str = None,  # Путь до модели и параметров конфигураций.
     adapter_path: str = None,  
-    checkpoint: str = False,
+    checkpoint: str = None,
     sample_rate: float = 1.0,
-    report_to: str = None,
+    report_to: str = "none",
     seed: int = 42,
     use_flash_attention_2: bool = False
 ):
@@ -194,7 +194,7 @@ def train(
     # model_types = {"causal": AutoModelForCausalLM,}
     
     # ------------------- Загрузка модели -----------------------
-
+    print('Load model')
     load_in_8bit = bool(config.get("load_in_8bit", False))  # Изменяем параметры модели для дообучения.
     load_in_4bit = bool(config.get("load_in_4bit", False))  # для дообучения модели нужны свои спытания. 
     use_bf16 = bool(trainer_config.get("bf16", False))
@@ -249,6 +249,7 @@ def train(
     # Обучение новой модели, дообучение существующей.
     # если переданы данные для LoRa, то загружаем ее.
     if adapter_path:
+        print('Load Adapter')
         model = PeftModel.from_pretrained(
                     model,
                     adapter_path,
@@ -256,28 +257,29 @@ def train(
                     )
     else:     
         if lora_config:  # Здесь надо самим загрузить новую модль LoRa. 
+            print('Load LoRa')
             lora_config = LoraConfig(**lora_config)  # Надо понять чем параметры адаптера для обучения отличаются от параметров для предсказаний.
             model = get_peft_model(model, lora_config)   
 
-    # trainer = Trainer(
-    #     model=model,
-    #     args=training_args,
-    #     data_collator=data_collator,
-    #     train_dataset=train_dataset,
-    #     eval_dataset=val_dataset
-    # )
-    trainer = TrainerNoBaseSave(
+    trainer = Trainer(
         model=model,
         args=training_args,
+        data_collator=data_collator,
         train_dataset=train_dataset,
-        eval_dataset=val_dataset,
-        callbacks=callbacks,
-        data_collator=data_collator
+        eval_dataset=val_dataset
     )
+    # trainer = TrainerNoBaseSave(
+    #     model=model,
+    #     args=training_args,
+    #     train_dataset=train_dataset,
+    #     eval_dataset=val_dataset,
+    #     callbacks=callbacks,
+    #     data_collator=data_collator
+    # )
 
     # if trainer_config.get("report_to", "wandb") == "wandb":
     #     wandb.init(project="rulm_self_instruct", name=config_file)
-
+    print('training run.')
     trainer.train(checkpoint)
     print(f'save model to {output_dir}')
     model.save_pretrained(output_dir)

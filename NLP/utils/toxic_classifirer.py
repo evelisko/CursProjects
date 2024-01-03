@@ -2,10 +2,13 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 name_value = ['non-toxic', 'insult', 'obscenity', 'threat', 'dangerous']
-#            [нетоксичен, оскорбление, непристойность, угроза, опасность]
-# В зависимости от типа оскорбления. бот использует разные ключевые фразы.
-# Создадим файл с заготовленными фразами.
-#----------------------------
+
+toxic_colors = {'non-toxic': '',
+                'insult': 'Ох, Дорогой, пожалуйста без грубостей. Или я не буду с тобой разговаривать.',
+                'obscenity': 'Ох, Дорогой, кто научил тебя таким словам.',
+                'threat': 'Молодой человек! я бы попросила ... Нам лучше прекратить беседу.',
+                'dangerous': 'Молодой человек! я бы попросила ... Нам лучше прекратить беседу.'
+                }
 
 class CheckToxicity(): # Посмотреть сколько ресурсов потребляет модель.
     def __init__(self):
@@ -29,9 +32,11 @@ class CheckToxicity(): # Посмотреть сколько ресурсов п
         if isinstance(text, str):
             result = list(map(lambda y: y[1],
                         list(filter(lambda x: x[0] >= self.score, zip(result[0], name_value)))))
-            print(result) 
-            # если есть текст кроме нетоксичности, значит он токсичный.
-            # выбираем максимально значение из токсичных. И вычисляем для него 
-        return result
+            print(result)
+            index = 1 if result[0] == name_value[0] and len(result) > 1 else 0
+
+            return toxic_colors[result[index]]
+        else: 
+            return toxic_colors['non-toxic']
 
 

@@ -2,18 +2,15 @@ import random
 import json
 import os
 
-import fire
-# import wandb
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification, AutoConfig
-from transformers import Trainer, TrainingArguments, logging, TrainerCallback, TrainerState, TrainerControl, BitsAndBytesConfig
+from transformers import Trainer, TrainingArguments, TrainerCallback, TrainerState, TrainerControl, BitsAndBytesConfig
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training, PeftModel
 from util.dataset import ChatDataset
 from util.dl import set_random_seed, fix_tokenizer, fix_model
 from util.io import read_jsonl
-from util.load import load_saiga
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -96,7 +93,7 @@ def custom_prepare_model_for_int8_training(
 
 
 def train( 
-    config_file: str,  # trainer_config
+    config_file: str,
     train_file: str,
     val_file: str,
     output_dir: str,
@@ -106,24 +103,25 @@ def train(
     sample_rate: float = 1.0,
     report_to: str = "none",
     seed: int = 42,
-    use_flash_attention_2: bool = False
 ):
     set_random_seed(seed)
-    # logging.set_verbosity_info()
     with open(config_file, "r") as r:
         config = json.load(r)
 
     device_map = "auto"
     # ------------------------- DeepSpeed ---------------------------
-    world_size = int(os.environ.get("WORLD_SIZE", 1))  # Проверяем сколько видеокарт установлено на компьютере. 
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
 
     deepspeed_config = config.get("deepspeed")
+    print('deepspeed: ', deepspeed_config)
+    print(config["model_name"])
+    
     trainer_config = config.get("trainer")
     lora_config = config.get("lora")
     callbacks = [SavePeftModelCallback] if lora_config else []
 
-    training_args = TrainingArguments(  # важный параметр.
+    training_args = TrainingArguments(
         output_dir=output_dir,
         save_total_limit=1,
         load_best_model_at_end=True,
@@ -133,17 +131,6 @@ def train(
         **trainer_config
     )
 
-    # training_args = TrainingArguments(
-    #     output_dir="./gpt2-sv", #The output directory
-    #     overwrite_output_dir=True, #overwrite the content of the output directory
-    #     num_train_epochs=3, # number of training epochs
-    #     per_device_train_batch_size=4, # batch size for training
-    #     per_device_eval_batch_size=4,  # batch size for evaluation
-    #     eval_steps = 400, # Number of update steps between two evaluations.
-    #     save_steps=800, # after # steps model is saved
-    #     warmup_steps=500,# number of warmup steps for learning rate scheduler
-    #     )
-    
     model_name = model_path if model_path else config["model_name"]
 
     if ddp:  # DistributedDataParallel Организует работу с несколькими видеокартами.
@@ -155,24 +142,22 @@ def train(
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
     model_config = AutoConfig.from_pretrained(model_name)
     tokenizer = fix_tokenizer(tokenizer, model_config)
-    tokenizer.save_pretrained(output_dir)
 
-    # model_type = config.get("model_type", "causal")
-    templates_path = config["templates_path"]  # "internal_prompts/saiga_v2.json",
+    templates_path = config["templates_path"]
     only_target_loss = config.get("only_target_loss", True)
     mode = config.get("mode", "chat") 
     assert mode == "chat", "Only chat mode is supported in new versions!"
-    # assert model_type == "causal", "Only causal models are supported in new versions!"
+    assert config['model_type'] == "causal", "Only causal models are supported in new versions!"
     max_tokens_count = config["max_tokens_count"]
-    #------------------- Загрузка датасета -------------------------
+
+    # ------------------- Загрузка датасета -------------------------
     train_records = read_jsonl(train_file)
     val_records = read_jsonl(val_file)
     random.shuffle(train_records)
-    # print(train_records[0])
 
     datasets = []
     for records in (train_records, val_records):
-        datasets.append(ChatDataset(  # Откуда его взять? Зачем он вообще создается? и каков формат представления данных?
+        datasets.append(ChatDataset(
             records,
             tokenizer,
             max_tokens_count=max_tokens_count,
@@ -184,19 +169,12 @@ def train(
     train_dataset, val_dataset = datasets
     data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
 
-    # print("INPUT_IDS")
-    # print(data_collator([train_dataset[0], train_dataset[1]])["input_ids"][0])
-    # print("MASK")
-    # print(data_collator([train_dataset[0], train_dataset[1]])["attention_mask"][0])
-    # print("LABELS")
-    # print(data_collator([train_dataset[0], train_dataset[1]])["labels"][0])
-
-    # model_types = {"causal": AutoModelForCausalLM,}
-    
     # ------------------- Загрузка модели -----------------------
     print('Load model')
-    load_in_8bit = bool(config.get("load_in_8bit", False))  # Изменяем параметры модели для дообучения.
-    load_in_4bit = bool(config.get("load_in_4bit", False))  # для дообучения модели нужны свои спытания. 
+    load_in_8bit = bool(config.get("load_in_8bit", False))
+    load_in_4bit = bool(config.get("load_in_4bit", False))
+    print(f'use 8 bit: {load_in_8bit}')
+    print(f'use 4 bit: {load_in_4bit}')
     use_bf16 = bool(trainer_config.get("bf16", False))
     torch_dtype = torch.bfloat16 if use_bf16 else torch.float16
     if load_in_8bit:
@@ -208,7 +186,7 @@ def train(
             torch_dtype=torch_dtype,
             # use_flash_attention_2=use_flash_attention_2
         )
-        model = fix_model(model, tokenizer, use_resize=False)  # -----
+        model = fix_model(model, tokenizer, use_resize=False)
         model = custom_prepare_model_for_int8_training(model)
     elif load_in_4bit:
         assert not load_in_8bit
@@ -227,12 +205,11 @@ def train(
             quantization_config=quantization_config,
             torch_dtype=torch_dtype
         )
-        model = fix_model(model, tokenizer, use_resize=False)  # ------
+        model = fix_model(model, tokenizer, use_resize=False)
         model = prepare_model_for_kbit_training(model)
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name)
         model = fix_model(model, tokenizer)
-    # ------------------------------------------------------------- 
 
     # Default model generation params
     model.config.num_beams = 5
@@ -242,23 +219,19 @@ def train(
         model.is_parallelizable = True
         model.model_parallel = True
 
-    # Загружаем модель,
-    # изменяем конфиги так, чтобы они соответствовали тем, которые нужны для дообучения модели.
-    # передаем конфиги в скрипт для обучения модели. 
-
-    # Обучение новой модели, дообучение существующей.
-    # если переданы данные для LoRa, то загружаем ее.
     if adapter_path:
         print('Load Adapter')
         model = PeftModel.from_pretrained(
                     model,
                     adapter_path,
-                    torch_dtype=torch_dtype
+                    torch_dtype=torch_dtype,
+                    is_trainable=True,
+                    # config=lora_config
                     )
     else:     
-        if lora_config:  # Здесь надо самим загрузить новую модль LoRa. 
-            print('Load LoRa')
-            lora_config = LoraConfig(**lora_config)  # Надо понять чем параметры адаптера для обучения отличаются от параметров для предсказаний.
+        if lora_config:
+            print('Create Adapter')
+            lora_config = LoraConfig(**lora_config)
             model = get_peft_model(model, lora_config)   
 
     trainer = Trainer(
@@ -268,22 +241,10 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=val_dataset
     )
-    # trainer = TrainerNoBaseSave(
-    #     model=model,
-    #     args=training_args,
-    #     train_dataset=train_dataset,
-    #     eval_dataset=val_dataset,
-    #     callbacks=callbacks,
-    #     data_collator=data_collator
-    # )
 
-    # if trainer_config.get("report_to", "wandb") == "wandb":
-    #     wandb.init(project="rulm_self_instruct", name=config_file)
     print('training run.')
     trainer.train(checkpoint)
     print(f'save model to {output_dir}')
     model.save_pretrained(output_dir)
-
-
-if __name__ == "__main__":
-    fire.Fire(train)
+    tokenizer.save_pretrained(output_dir)
+    model.generation_config.save_pretrained(output_dir)

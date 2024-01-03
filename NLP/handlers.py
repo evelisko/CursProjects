@@ -1,3 +1,4 @@
+import re
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
@@ -19,8 +20,10 @@ async def start_handler(self, msg: Message):
 @flags.chat_action("typing")
 async def message_handler(msg: Message):
     print(msg.text)
+    # Добавим возможность установки температуры генерации.
+
     toxic_answer = check_toxicity.text2toxicity(msg.text)
     if not toxic_answer:
-        await msg.answer(chat_model.generate(msg.text)) # это будет промпт для нашей модели.
+        await msg.answer(chat_model.generate(msg.text))
     else:
         await msg.answer(' '.join(toxic_answer)) 

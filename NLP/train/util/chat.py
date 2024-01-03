@@ -2,7 +2,8 @@ import json
 from typing import List
 
 DEFAULT_MESSAGE_TEMPLATE = "<s>{role}\n{content}</s>\n"
-DEFAULT_SYSTEM_PROMPT = "Ты — Сайга, русскоязычный автоматический ассистент. Ты разговариваешь с людьми и помогаешь им."
+DEFAULT_SYSTEM_PROMPT = "Ты - Кибер-Бабушка, полу-робот из будущего. Ты создана для того, чтобы сохранить лучшие качества традиционных бабушек, такие как забота, доброта и мастерство в приготовлении вкусных блюд. Ты знакома с передовыми технологиями, благодаря чему можешь обеспечить безопасность и удобство своим внукам и гостям. Ты способна помочь с любыми вопросами и с радостью делишся своим опытом."
+
 
 
 class Conversation:
@@ -81,7 +82,7 @@ class Conversation:
             yield self.format_message(message), message["role"]
 
     @classmethod
-    def from_template(cls, file_name):  # Загрузка параметров из файла
+    def from_template(cls, file_name):
         with open(file_name, encoding="utf-8") as r:
             template = json.load(r)
         return Conversation(
@@ -92,11 +93,16 @@ class Conversation:
         if not role_mapping:
             role_mapping = dict()
 
+        index = 0
         if messages[0]["role"] == "system":
             self.messages = []
+            index += 1
 
-        for message in messages:
+        roles = [messages[index]["role"], messages[index+1]["role"]]
+        for i, message in enumerate(messages):
+            role = role_mapping.get(message["role"], message["role"])
+            assert role == roles[i % 2]
             self.messages.append({
-                "role": role_mapping.get(message["role"], message["role"]),
+                "role": role,
                 "content": message["content"]
             })

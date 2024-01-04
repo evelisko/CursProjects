@@ -1,7 +1,6 @@
 import os
 import asyncio
-from dynaconf import Dynaconf
-from config_manager import Config
+import json
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -11,22 +10,20 @@ import handlers
 
 async def main():
     file_dir = os.path.dirname(os.path.realpath('__file__'))
-    config_path = os.path.join(file_dir, 'config', 'config.ini')
+    config_path = os.path.join(file_dir, 'config', 'config.json')
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"{config_path}")
 
-    config_parser = Dynaconf(
-         settings_files=[config_path],
-         environments=True,
-         auto_cast=True,
-         env='default'
-         )
-
-    config = Config(config_parser)
-    handlers.chat_model.load(config.llm_model, config.system_prompt,
-                              is_lora=config.is_lora, use_4bit=config.is_4bit)
-    handlers.check_toxicity.load(config.classifire_model, config.toxicity_score) 
-    bot = Bot(token=config.token, parse_mode=ParseMode.HTML)
+    if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf8') as f:
+                config = json.load(f)
+    else:
+        print('File {} not exists'.format(config_path))   
+    
+    handlers.chat_model.load(config['llm_model'], config['system_prompt'],
+                              is_lora=config['is_lora'], use_4bit=config['is_4bit'])
+    handlers.check_toxicity.load(config['classifire_model'], config['toxicity_score'], config["toxic_colors"]) 
+    bot = Bot(token=config['token'], parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(handlers.router)
     dp.message.middleware(ChatActionMiddleware())

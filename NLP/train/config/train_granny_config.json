@@ -6,7 +6,7 @@
         "gradient_accumulation_steps": 128,
         "eval_steps": 5,
         "save_steps": 5,
-        "logging_steps": 2,
+        "logging_steps": 10,
         "learning_rate": 0.0003,
         "num_train_epochs": 50,
         "lr_scheduler_type": "cosine",
@@ -32,4 +32,3 @@
     "model_type": "causal",
     "max_tokens_count": 4096
 }
-

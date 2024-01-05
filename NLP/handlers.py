@@ -20,10 +20,15 @@ async def start_handler(self, msg: Message):
 @flags.chat_action("typing")
 async def message_handler(msg: Message):
     print(msg.text)
-    # Добавим возможность установки температуры генерации.
 
-    toxic_answer = check_toxicity.text2toxicity(msg.text)
-    if not toxic_answer:
-        await msg.answer(chat_model.generate(msg.text))
-    else:
-        await msg.answer(' '.join(toxic_answer)) 
+    temperature = re.findall('temperature:.*?(\d\.\d\d?).*', msg.text)
+
+    if temperature:
+        print(f'temperature=: {temperature}')
+        await msg.answer(chat_model.change_temperature(float(temperature[0])))
+    else:    
+        toxic_answer = check_toxicity.text2toxicity(msg.text)
+        if not toxic_answer:
+            await msg.answer(chat_model.generate(msg.text))
+        else:
+            await msg.answer(' '.join(toxic_answer)) 

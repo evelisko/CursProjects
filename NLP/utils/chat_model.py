@@ -1,4 +1,5 @@
 import os
+import gc
 import sys
 import json
 import torch
@@ -103,18 +104,28 @@ class ChatModel():
         if torch_compile and torch.__version__ >= "2" and sys.platform != "win32":
             self.model = torch.compile(self.model)
     
-    def dump_memory():
-        pass
+    def dump_memory(self):
+        if self.model:
+            self.model = None
+            self.tokenizer = None
+            self.generation_config = None
+        gc.collect()
+        torch.cuda.empty_cache()
 
-    def generate(self, prompts: List[str], temperature: float = None):
+    def change_temperature(self, temperature: float = 0.5):
+        try:
+            print(f'new temperature {temperature}')
+            self.generation_config.temperature = temperature
+            return f'Установлена температура для генерации = {temperature}'
+        except Exception as ex:
+            print(ex)
+
+    def generate(self, prompts: List[str]):
         prompts = f"<s>system\n{self.system_prompt}</s>\n" + \
             f"<s>user\n{prompts}</s>\n" + \
             f"<s>bot\n"
         if self.eos_token_id is not None:
             self.generation_config.eos_token_id = self.eos_token_id
-
-        if temperature:
-            self.generation_config.temperature = temperature
 
         data = self.tokenizer(
             prompts,

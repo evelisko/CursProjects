@@ -12,7 +12,7 @@ chat_model = ChatModel()
 check_toxicity = CheckToxicity()
 
 @router.message(Command("start"))
-async def start_handler(self, msg: Message):
+async def start_handler(msg: Message):
     await msg.answer("Здравствуй, дорогой! Чем могу помочь тебе сегодня?")
 
 

@@ -22,6 +22,7 @@ async def main():
     
     handlers.chat_model.load(config['llm_model'], config['system_prompt'],
                               is_lora=config['is_lora'], use_4bit=config['is_4bit'])
+    handlers.chat_model.change_temperature(0.3)
     handlers.check_toxicity.load(config['classifire_model'], config['toxicity_score'], config["toxic_colors"]) 
     bot = Bot(token=config['token'], parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())

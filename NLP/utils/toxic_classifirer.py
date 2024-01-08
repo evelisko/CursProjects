@@ -12,7 +12,6 @@ class CheckToxicity():
     def load(self, model_name_or_path: str = None, score: int = 0.9, toxic_colors: dict = {}):
         self.toxic_colors = toxic_colors
         self.name_value =list(self.toxic_colors.keys())
-        print(self.name_value)
         self.score = score
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path)

@@ -115,8 +115,9 @@ class ChatModel():
     def change_temperature(self, temperature: float = 0.5):
         try:
             print(f'new temperature {temperature}')
+            last_temperature = self.generation_config.temperature
             self.generation_config.temperature = temperature
-            return f'Установлена температура для генерации = {temperature}'
+            return f'Температура генерации изменена с {last_temperature} на {temperature}'
         except Exception as ex:
             print(ex)
 

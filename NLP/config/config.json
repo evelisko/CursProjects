@@ -1,6 +1,6 @@
 {
   "token": "123",
-  "genertion_temperature": 0.3,
+  "generation_temperature": 0.3,
   "use_rag": "True",
   "rag_question_prompt": "Пожалуйста, посмотри на текст ниже и ответь на вопрос, используя информацию из этого текста. Текст:\r\n-----\r\n{context}\r\n-----\r\nВопрос:\r\n{query}",
   "llm_model": {
@@ -9,7 +9,7 @@
     "use_4bit": "False",
     "is_lora": "True"
   },
-  "toxicity_classifirer": {
+  "toxicity_classifier": {
     "model_name_or_path": "cointegrated/rubert-tiny-toxicity",
     "score": 0.8,
     "toxic_colors": {
@@ -20,12 +20,12 @@
       "dangerous": "Молодой человек! я бы попросила ... Нам лучше прекратить беседу."
     }
   },
-  "smart_recepies_search": {
-    "dataset_path": "datasets/recepies.json",
+  "smart_recipes_search": {
+    "dataset_path": "datasets/recipes.json",
     "vectorizer_model_path": "models/fasttext.model",
-    "vector_db_path": "models/weighted_doc_vects.p",
+    "vector_db_path": "datasets/weighted_doc_vects.p",
     "max_distance": 0.15,
-    "recomend_count": 1,
-    "recepies_key_words": ["рецепт", "как приготовить", "как испечь"]
+    "recommend_count": 1,
+    "recipes_key_words": ["рецепт приготовления", "рецепт", "что можно приготовить", "что приготовить", "как приготовить", "как испечь"]
   }
 }

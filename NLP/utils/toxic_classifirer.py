@@ -2,7 +2,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
-class CheckToxicity():
+class CheckToxicity:
     def __init__(self):
         self.tokenizer = None
         self.model = None
@@ -11,7 +11,7 @@ class CheckToxicity():
 
     def load_model(self, model_name_or_path: str = None, score: int = 0.9, toxic_colors: dict = {}):
         self.toxic_colors = toxic_colors
-        self.name_value =list(self.toxic_colors.keys())
+        self.name_value = list(self.toxic_colors.keys())
         self.score = score
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path)

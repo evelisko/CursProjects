@@ -51,15 +51,10 @@ class ChatDataset(Dataset):
         return self.records[index]
 
     def get_tokens(self, text):
-        return self.tokenizer(
-            text,
-            add_special_tokens=False,
-            padding=False,
-            truncation=False
-        )["input_ids"]
+        return self.tokenizer(text, add_special_tokens=False, padding=False, truncation=False)["input_ids"]
 
     def convert_record(self, record):
-        conversation = Conversation.from_template(self.templates_path)  #  Ненужно нам этого.
+        conversation = Conversation.from_template(self.templates_path)  # Ненужно нам этого.
         conversation.expand(record["messages"])  # Для запоминания контекста диалога.
 
         input_ids, labels = [], []

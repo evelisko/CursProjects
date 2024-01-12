@@ -21,10 +21,10 @@ async def main():
         print('File {} not exists'.format(config_path))   
     handlers.use_rag = config['use_rag']
     handlers.chat_model.load_model(**config['llm_model'])
-    handlers.chat_model.change_temperature(config['genertion_temperature'])
+    handlers.chat_model.change_temperature(config['generation_temperature'])
     handlers.chat_model.set_rag_prompt(config['rag_question_prompt'])
-    handlers.check_toxicity.load_model(**config['toxicity_classifirer'])
-    handlers.smart_search.set_config(**config['smart_recepies_search'])
+    handlers.check_toxicity.load_model(**config['toxicity_classifier'])
+    handlers.smart_search.set_config(**config['smart_recipes_search'])
 
     bot = Bot(token=config['token'], parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())

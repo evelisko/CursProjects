@@ -69,7 +69,7 @@ async def message_handler(msg: Message):
     if not toxic_answer:
         recipe = ""
         if use_rag:
-            recipe = smart_search.find_recepies(msg.text)
+            recipe = smart_search.find_recipes(msg.text)
         if recipe:
             await msg.answer(chat_model.generate_rag(msg.text, recipe))
         else:

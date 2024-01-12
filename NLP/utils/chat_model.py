@@ -1,21 +1,17 @@
-import os
 import gc
 import sys
-import json
 import torch
-from tqdm import tqdm
-from typing import List
 from transformers import AutoTokenizer, GenerationConfig, AutoModelForCausalLM, AutoConfig, BitsAndBytesConfig
 from peft import PeftConfig, PeftModel
 
 
-class ChatModel():
+class ChatModel:
     def __init__(self):
         self.system_prompt = ""
         self.torch_dtype = None
         self.use_flash_attention_2 = False
-        self.source_max_length: int = 512,
-        self.eos_token_id: int = None
+        self.source_max_length = 512
+        self.eos_token_id = None
         self.model = None,
         self.tokenizer = None
         self.generation_config = None
@@ -48,7 +44,7 @@ class ChatModel():
                         bnb_4bit_use_double_quant=True,
                         bnb_4bit_quant_type="nf4"
                     ),
-                self.m4odel = AutoModelForCausalLM.from_pretrained(
+                self.model = AutoModelForCausalLM.from_pretrained(
                     model_name_or_path,
                     # torch_dtype=self.torch_dtype,
                     load_in_4bit=True,
@@ -146,6 +142,6 @@ class ChatModel():
             outputs.append(sample_output)
         return outputs[0]
     
-    def generate_rag(self, prompt: str, recepie: str):
-        return self.generate(self.rag_prompt.format(context=recepie, query=prompt))
+    def generate_rag(self, prompt: str, recipe: str):
+        return self.generate(self.rag_prompt.format(context=recipe, query=prompt))
         

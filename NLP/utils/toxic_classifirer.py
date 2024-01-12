@@ -9,7 +9,7 @@ class CheckToxicity():
         self.score = 0.9
         self.name_value = []
 
-    def load(self, model_name_or_path: str = None, score: int = 0.9, toxic_colors: dict = {}):
+    def load_model(self, model_name_or_path: str = None, score: int = 0.9, toxic_colors: dict = {}):
         self.toxic_colors = toxic_colors
         self.name_value =list(self.toxic_colors.keys())
         self.score = score

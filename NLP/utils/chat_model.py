@@ -20,7 +20,10 @@ class ChatModel():
         self.tokenizer = None
         self.generation_config = None
 
-    def load(self,
+    def set_rag_prompt(self, prompt: str):
+        self.rag_prompt = prompt
+ 
+    def load_model(self,
              model_name_or_path: str = None,
              system_prompt: str = "",
              use_4bit: bool = True,
@@ -121,7 +124,7 @@ class ChatModel():
         except Exception as ex:
             print(ex)
 
-    def generate(self, prompts: List[str]):
+    def generate(self, prompts: str):
         prompts = f"<s>system\n{self.system_prompt}</s>\n" + \
             f"<s>user\n{prompts}</s>\n" + \
             f"<s>bot\n"
@@ -142,3 +145,7 @@ class ChatModel():
             sample_output = sample_output.replace("</s>", "").strip()
             outputs.append(sample_output)
         return outputs[0]
+    
+    def generate_rag(self, prompt: str, recepie: str):
+        return self.generate(self.rag_prompt.format(context=recepie, query=prompt))
+        

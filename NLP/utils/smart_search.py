@@ -72,6 +72,5 @@ class SmartSearch:
                 print(key_word)
                 result = text.lower().split(key_word)[-1].strip()
                 break
-        print('\n\r')
         print(f'check_recipes {result}')
         return result

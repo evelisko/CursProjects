@@ -56,6 +56,7 @@ async def start_handler(msg: Message):
 @router.callback_query(F.data.startswith("rag_mode_"))
 async def set_rag_mode(callback: CallbackQuery):
     answer = callback.data.split("_")[-1]
+    global use_rag
     use_rag = True if answer == 'on' else False
     msg = f'Retrieval Augmented Generation mode: {answer.upper()}' 
     await callback.message.edit_text(msg)
@@ -68,7 +69,7 @@ async def message_handler(msg: Message):
     toxic_answer = check_toxicity.text2toxicity(msg.text)
     if not toxic_answer:
         recipe = ""
-        if use_rag:
+        if use_rag:        
             recipe = smart_search.find_recipes(msg.text)
         if recipe:
             await msg.answer(chat_model.generate_rag(msg.text, recipe))
